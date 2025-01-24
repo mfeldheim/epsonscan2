@@ -1,0 +1,34 @@
+# How to use the C++ sample application
+
+## Steps to setup
+
+1. Install the JDK required for the build.(Java version 11 or later is required.)
+
+```console
+# apt install cmake g++
+```
+
+2. The SDK must be installed.(If not, please refer to "Steps to install SDK".)
+
+## Steps to build sample application
+
+Move the current directory to SCANSDKsample_Java and execute build.sh.
+
+```console
+$ cd [SCANSDKsample_C++ directory path]
+$ ./build.sh
+```
+
+## Steps to use sample application
+
+For example, use the sdksample build in the previous step as follows. (USB connection)
+
+```console
+$ ./sdksample --scan [Device ID]
+```
+[Device ID] is entered as the device ID: of the following execution.
+
+```console
+$ epsonscan2 -l
+```
+
