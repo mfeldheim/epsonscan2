@@ -1,0 +1,56 @@
+name: Build ARM64 Package
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+      
+    - name: Build in Raspbian Container
+      run: |
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        docker run --platform linux/arm64 -v ${{ github.workspace }}:/workspace -w /workspace \
+          arm64v8/debian:bullseye \
+          /bin/bash -c '
+            apt-get update && apt-get install -y sudo
+            chmod +x ./install-deps
+            ./install-deps
+            mkdir build && cd build
+            cmake ..
+            make -j$(nproc)
+            
+            # Create installation package
+            mkdir -p package/DEBIAN
+            mkdir -p package/usr
+            make install DESTDIR=$(pwd)/package
+            
+            # Create control file
+            cat > package/DEBIAN/control << EOF
+            Package: epsonscan2
+            Version: 6.7.70.0-1
+            Architecture: arm64
+            Maintainer: Michel Feldheim <m.feldheim@gmail.com>
+            Description: Epson Scan 2
+             Epson Scan 2 utility for Linux
+            EOF
+            
+            # Build the deb package
+            dpkg-deb --build package epsonscan2-arm64.deb
+          '
+          
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: epsonscan2-arm64
+        path: build/epsonscan2-arm64.deb
