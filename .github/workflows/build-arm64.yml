@@ -13,23 +13,31 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
-      
+
     - name: Build in Raspbian Container
       run: |
         docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-        docker run --platform linux/arm64 -v ${{ github.workspace }}:/workspace -w /workspace \
+        docker run --platform linux/arm64 \
+          --memory=4g \
+          --memory-swap=4g \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
           arm64v8/debian:bullseye \
           /bin/bash -c '
             apt-get update && apt-get install -y sudo
             chmod +x ./install-deps
             ./install-deps
             mkdir build && cd build
-            cmake ..
-            make -j$(nproc)
-            
+        
+            # Configure with lower memory usage
+            cmake -DCMAKE_CXX_FLAGS="-O1" ..
+        
+            # Build with single core to avoid memory issues
+            make -j1
+        
             # Create installation package
             mkdir -p package/DEBIAN
             mkdir -p package/usr
@@ -48,7 +56,7 @@ jobs:
             # Build the deb package
             dpkg-deb --build package epsonscan2-arm64.deb
           '
-          
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
